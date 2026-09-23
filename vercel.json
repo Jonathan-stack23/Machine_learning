@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/vehicle_inspector/wsgi.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/docs(.*)",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/redoc(.*)",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/openapi.json",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/frontend/inspection/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/vehicle_inspector/wsgi.py"
+    }
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "vehicle_inspector.settings",
+    "PYTHONPATH": "frontend:."
+  }
+}
