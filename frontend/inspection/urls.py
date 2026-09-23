@@ -11,4 +11,5 @@ urlpatterns = [
     path("dashboard/", views.dashboard_view, name="dashboard"),
     path("inspect/", views.inspect_view, name="inspect"),
     path("report/", views.report_view, name="report"),
+    path("api/inspect-proxy/", views.api_inspect_proxy, name="api_inspect_proxy"),
 ]

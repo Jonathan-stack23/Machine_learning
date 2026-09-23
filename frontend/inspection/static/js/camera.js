@@ -171,23 +171,45 @@ class VehicleCameraStream {
     formData.append('notes', notes);
     formData.append('file', this.capturedBlob, 'vehicle_capture.jpg');
 
+    let result = null;
+    let inspectionSuccess = false;
+
+    // 1. Intento primario: Comunicación directa con FastAPI
     try {
-      // Petición al backend FastAPI
       const response = await fetch(`${this.apiBaseUrl}/api/v1/inspect-vehicle`, {
         method: 'POST',
         body: formData
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error en la respuesta del servidor de IA');
+      if (response.ok) {
+        result = await response.json();
+        inspectionSuccess = true;
       }
+    } catch (directErr) {
+      console.warn('Conexión directa con FastAPI no disponible, intentando proxy Django:', directErr);
+    }
 
-      const result = await response.json();
+    // 2. Intento secundario: Proxy HTTP de Django
+    if (!inspectionSuccess) {
+      try {
+        const proxyResponse = await fetch('/api/inspect-proxy/', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (proxyResponse.ok) {
+          result = await proxyResponse.json();
+          inspectionSuccess = true;
+        }
+      } catch (proxyErr) {
+        console.warn('Conexión por proxy falló, activando modo demostración:', proxyErr);
+      }
+    }
+
+    if (inspectionSuccess && result) {
       this.renderInspectionResults(result);
-    } catch (err) {
-      console.error('Error durante la inferencia:', err);
-      // Fallback a simulación de demostración si el backend FastAPI estuviera en otro puerto
+    } else {
+      // 3. Fallback a análisis local de demostración
       this.simulateFallbackInspection(vehicleId, sidePosition);
     } finally {
       if (this.scanline) this.scanline.style.display = 'none';

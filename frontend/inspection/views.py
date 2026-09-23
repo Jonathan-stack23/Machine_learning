@@ -2,10 +2,13 @@
 Vistas de Django para Autenticación, Dashboard e Inspección de Vehículos
 """
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from functools import wraps
+from .services import FastAPIService
 
 def inspector_login_required(view_func):
     """Decorador para proteger vistas del frontend mediante sesión"""
@@ -86,3 +89,40 @@ def report_view(request):
         "user_name": request.session.get("full_name", "Inspector"),
         "role": request.session.get("role", "Inspector Vehicular"),
     })
+
+
+@csrf_exempt
+def api_inspect_proxy(request):
+    """
+    Proxy HTTP seguro entre el cliente frontend Django y la API FastAPI.
+    Permite enviar capturas de cámara multipart hacia POST /api/v1/inspect-vehicle
+    evitando bloqueos de CORS o diferencias de dominio.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido. Use POST."}, status=405)
+
+    try:
+        vehicle_id = request.POST.get("vehicle_id", "ABC-123")
+        side_position = request.POST.get("side_position", "Lateral Derecho")
+        notes = request.POST.get("notes", "")
+
+        file = request.FILES.get("file")
+        if not file:
+            return JsonResponse({"error": "No se recibió archivo de imagen."}, status=400)
+
+        image_bytes = file.read()
+        filename = file.name
+
+        # Llamar al servicio FastAPI
+        result = FastAPIService.inspect_vehicle(
+            image_bytes=image_bytes,
+            filename=filename,
+            vehicle_id=vehicle_id,
+            side_position=side_position,
+            notes=notes
+        )
+
+        return JsonResponse(result, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e), "damage_detected": False}, status=500)
+
