@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Acta Digital de Inspección - AutoInspect AI{% endblock %}
+
+{% block extra_head %}
+<style>
+  @media print {
+    .navbar, .footer, .btn, .no-print {
+      display: none !important;
+    }
+    body {
+      background: #fff !important;
+      color: #000 !important;
+    }
+    .glass-card {
+      background: #fff !important;
+      border: 1px solid #ccc !important;
+      color: #000 !important;
+      box-shadow: none !important;
+    }
+    .badge {
+      border: 1px solid #000 !important;
+      color: #000 !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 2rem; margin-bottom: 0.25rem;">Resumen Digital de Inspección</h1>
+    <p style="color: var(--text-secondary);">
+      Acta técnica generada por el Asistente de IA para prevención de disputas por daños físicos.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <button onclick="window.print()" class="btn btn-secondary">🖨️ Imprimir / Guardar PDF</button>
+    <a href="{% url 'inspect' %}" class="btn btn-primary">📸 Nueva Inspección</a>
+  </div>
+</div>
+
+<div id="report-container" class="glass-card" style="padding: 2.5rem; max-width: 900px; margin: 0 auto;">
+  <!-- ENCABEZADO OFICIAL -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border-subtle); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="font-size: 1.75rem;">🚗</span>
+        <h2 style="font-size: 1.6rem; color: var(--text-primary);">ACTA DIGITAL DE INSPECCIÓN VEHICULAR</h2>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.88rem;">
+        Empresa de Alquiler de Vehículos • Sistema de Certificación de Daños con Visión Artificial
+      </p>
+    </div>
+    <div style="text-align: right;">
+      <span id="rep-status-badge" class="badge badge-scratch" style="font-size: 0.9rem; padding: 0.45rem 0.9rem;">
+        OBSERVACIONES REGISTRADAS
+      </span>
+      <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.4rem;">
+        Reporte ID: <strong id="rep-id" style="color: var(--text-primary); font-family: monospace;">REP-7B32F1A</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATOS DEL VEHÍCULO E INSPECCIÓN -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase;">Vehículo (Placa / VIN):</span>
+      <div id="rep-vehicle" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-cyan);">SNA-2026</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase;">Inspector Responsable:</span>
+      <div id="rep-inspector" style="font-size: 1.05rem; font-weight: 600;">{{ user_name|default:"Jonathan SENA - Inspector" }}</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase;">Fecha de Emisión:</span>
+      <div id="rep-date" style="font-size: 0.95rem; font-weight: 500;">2026-09-23 13:20:59</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase;">Modelo de IA:</span>
+      <div style="font-size: 0.95rem; color: var(--accent-purple); font-weight: 600;">MobileNetV2 Vision</div>
+    </div>
+  </div>
+
+  <!-- TABLA DE DAÑOS PREEXISTENTES REGISTRADOS -->
+  <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem;">Análisis Detallado de Daños Preexistentes</h3>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem; font-size: 0.9rem;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left; color: var(--text-secondary);">
+        <th style="padding: 0.75rem 0.5rem;">Costado Inspeccionado</th>
+        <th style="padding: 0.75rem 0.5rem;">Tipo de Daño</th>
+        <th style="padding: 0.75rem 0.5rem;">Nivel de Severidad</th>
+        <th style="padding: 0.75rem 0.5rem;">Confianza IA</th>
+        <th style="padding: 0.75rem 0.5rem;">Estado Legal</th>
+      </tr>
+    </thead>
+    <tbody id="rep-damages-table">
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 0.75rem 0.5rem; font-weight: 600;">Lateral Derecho</td>
+        <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-scratch">Rayón (Scratch)</span></td>
+        <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-severity-medium">Medium</span></td>
+        <td style="padding: 0.75rem 0.5rem; color: var(--accent-cyan); font-weight: 600;">87%</td>
+        <td style="padding: 0.75rem 0.5rem; color: #34d399;">✓ Preexistente (Sin cargo al cliente)</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 0.75rem 0.5rem; font-weight: 600;">Lateral Izquierdo</td>
+        <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-clean">Sin Daños</span></td>
+        <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-severity-low">None</span></td>
+        <td style="padding: 0.75rem 0.5rem; color: var(--accent-cyan); font-weight: 600;">95%</td>
+        <td style="padding: 0.75rem 0.5rem; color: #9ca3af;">Conforme</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- CLÁUSULA DE RESOLUCIÓN DE DISPUTAS -->
+  <div style="background: rgba(6, 182, 212, 0.08); border-left: 4px solid var(--accent-cyan); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 2rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+    <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Garantía de Prevención de Disputas:</strong>
+    Las partes dejan constancia de que los daños catalogados como <em>Preexistentes</em> fueron detectados y delimitados mediante visión artificial al momento de la entrega. El arrendatario queda exonerado de responsabilidad económica por estos defectos al momento de la devolución del vehículo.
+  </div>
+
+  <!-- FIRMAS DIGITALES Y HASH CRIPTOGRÁFICO -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; border-top: 1px solid var(--border-subtle); padding-top: 2rem;">
+    <div style="text-align: center;">
+      <div style="border-bottom: 1px dashed rgba(255,255,255,0.3); height: 50px; margin-bottom: 0.5rem;"></div>
+      <div style="font-weight: 600; font-size: 0.9rem;">Firma del Inspector Autorizado</div>
+      <div style="font-size: 0.75rem; color: var(--text-secondary);">Jonathan SENA • Credencial Certificada</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="border-bottom: 1px dashed rgba(255,255,255,0.3); height: 50px; margin-bottom: 0.5rem;"></div>
+      <div style="font-weight: 600; font-size: 0.9rem;">Firma de Conformidad del Cliente</div>
+      <div style="font-size: 0.75rem; color: var(--text-secondary);">Arrendatario del Vehículo</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; text-align: center; font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">
+    Sello Digital Criptográfico SHA-256: <br>
+    <span id="rep-hash">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Cargar datos reales desde FastAPI GET /api/v1/inspection-report
+  document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const vehicleId = urlParams.get('vehicle_id') || 'SNA-2026';
+    const apiBase = window.API_BASE_URL || 'http://localhost:8000';
+
+    try {
+      const res = await fetch(`${apiBase}/api/v1/inspection-report?vehicle_id=${encodeURIComponent(vehicleId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('rep-id').textContent = data.report_id;
+        document.getElementById('rep-vehicle').textContent = data.vehicle_id;
+        document.getElementById('rep-inspector').textContent = data.inspector_name;
+        document.getElementById('rep-date').textContent = new Date(data.generated_at).toLocaleString();
+        document.getElementById('rep-status-badge').textContent = data.overall_status.toUpperCase();
+        document.getElementById('rep-hash').textContent = data.digital_certificate_hash;
+
+        if (data.damages && data.damages.length > 0) {
+          const tbody = document.getElementById('rep-damages-table');
+          tbody.innerHTML = '';
+          data.damages.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            tr.innerHTML = `
+              <td style="padding: 0.75rem 0.5rem; font-weight: 600;">${d.side_position}</td>
+              <td style="padding: 0.75rem 0.5rem;"><span class="badge ${d.type === 'Scratch' ? 'badge-scratch' : (d.type === 'Dent' ? 'badge-dent' : 'badge-clean')}">${d.type}</span></td>
+              <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-severity-${(d.severity || 'low').toLowerCase()}">${d.severity}</span></td>
+              <td style="padding: 0.75rem 0.5rem; color: var(--accent-cyan); font-weight: 600;">${Math.round((d.confidence || 0.85)*100)}%</td>
+              <td style="padding: 0.75rem 0.5rem; color: #34d399;">✓ Preexistente (Registrado)</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Usando valores iniciales de reporte:', err);
+    }
+  });
+</script>
+{% endblock %}

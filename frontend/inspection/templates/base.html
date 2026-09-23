@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AutoInspect AI - Inspección de Vehículos{% endblock %}</title>
+  
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <script>
+    window.API_BASE_URL = window.location.origin.includes('8000') ? window.location.origin : 'http://localhost:8000';
+  </script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="{% url 'dashboard' %}" class="brand">
+        <div class="brand-icon">🚗</div>
+        <div>
+          <span class="brand-text">AutoInspect <span style="color: var(--accent-cyan);">AI</span></span>
+          <span class="brand-badge">SENA ML v1.0</span>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        {% if request.session.is_authenticated or request.user.is_authenticated %}
+          <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            📊 Panel
+          </a>
+          <a href="{% url 'inspect' %}" class="nav-link {% if request.resolver_match.url_name == 'inspect' %}active{% endif %}">
+            📷 Nueva Inspección
+          </a>
+          <a href="{% url 'report' %}" class="nav-link {% if request.resolver_match.url_name == 'report' %}active{% endif %}">
+            📋 Actas Digitales
+          </a>
+          <a href="http://localhost:8000/docs" target="_blank" class="nav-link" title="Documentación Interactiva Swagger">
+            ⚡ Swagger API
+          </a>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: 0.5rem;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">
+              👤 {{ request.session.username|default:"Inspector" }}
+            </span>
+            <a href="{% url 'logout' %}" class="btn btn-danger" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">
+              Salir
+            </a>
+          </div>
+        {% else %}
+          <a href="http://localhost:8000/docs" target="_blank" class="nav-link">
+            Documentación API
+          </a>
+          <a href="{% url 'login' %}" class="btn btn-primary" style="padding: 0.45rem 1rem;">
+            Iniciar Sesión
+          </a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <!-- MENSAJES FLASH -->
+  {% if messages %}
+    <div style="max-width: 1280px; margin: 1rem auto 0; padding: 0 1.5rem;">
+      {% for message in messages %}
+        <div style="padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; font-size: 0.9rem;
+          {% if message.tags == 'error' %}background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-rose); color: #fca5a5;
+          {% elif message.tags == 'success' %}background: rgba(16, 185, 129, 0.2); border: 1px solid var(--accent-emerald); color: #6ee7b7;
+          {% else %}background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: #7dd3fc;{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>
+      <strong>AutoInspect AI</strong> • Proyecto Machine Learning - 3er Trimestre SENA •
+      Integrantes: <em>Jonathan & Angela Martínez</em> •
+      Stack: <strong>Django</strong> (Frontend) + <strong>FastAPI</strong> (Backend con MobileNet) + <strong>Vercel</strong>
+    </p>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Inspección de Vehículo en Vivo - AutoInspect AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2rem; margin-bottom: 0.25rem;">Inspección Visual con Visión Artificial</h1>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Capture el costado del vehículo con la cámara en tiempo real para análisis de rayones y abolladuras con MobileNet.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Volver al Panel</a>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: start;">
+  <!-- COLUMNA IZQUIERDA: VISOR DE CÁMARA Y HUD -->
+  <div>
+    <div class="camera-container">
+      <video id="video-preview" autoplay playsinline muted></video>
+      <canvas id="captured-canvas"></canvas>
+      <img id="image-result-preview" src="" alt="Captura de inspección" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+
+      <!-- HUD OVERLAY EN TIEMPO REAL -->
+      <div class="camera-hud">
+        <div class="hud-top-bar">
+          <div class="hud-status-live">
+            <span class="live-pulse"></span>
+            <span id="camera-status-text">ESPERANDO INICIO DE CÁMARA</span>
+          </div>
+          <span style="background: rgba(0,0,0,0.6); padding: 0.25rem 0.6rem; border-radius: var(--radius-full); font-size: 0.75rem; color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+            Modelo: MobileNetV2
+          </span>
+        </div>
+
+        <!-- RETÍCULA DE ENCUADRE DE CARROCERÍA -->
+        <div class="hud-reticle">
+          <div class="hud-corner tl"></div>
+          <div class="hud-corner tr"></div>
+          <div class="hud-corner bl"></div>
+          <div class="hud-corner br"></div>
+        </div>
+
+        <!-- LÍNEA LÁSER DE ESCANEO -->
+        <div id="hud-scanline" class="hud-scanline"></div>
+
+        <div id="hud-guide-text" class="hud-guide-text">
+          Presione "Iniciar Cámara" o suba una foto del vehículo
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLES DE HARDWARE DE CÁMARA -->
+    <div style="display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;">
+      <button id="btn-start-camera" type="button" class="btn btn-primary" style="flex: 1;">
+        🎥 Iniciar Cámara (getUserMedia)
+      </button>
+      <button id="btn-capture-photo" type="button" class="btn btn-secondary" style="flex: 1;" disabled>
+        📸 Capturar Fotograma
+      </button>
+      <button id="btn-switch-camera" type="button" class="btn btn-secondary" title="Cambiar cámara frontal/trasera" disabled>
+        🔄 Cambiar Cámara
+      </button>
+      <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
+        📁 Subir Imagen
+        <input id="file-upload-input" type="file" accept="image/*" style="display: none;">
+      </label>
+    </div>
+  </div>
+
+  <!-- COLUMNA DERECHA: METADATOS Y RESULTADOS -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- FORMULARIO DE METADATOS -->
+    <div class="glass-card">
+      <h3 style="font-size: 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>📋</span> Datos del Vehículo
+      </h3>
+
+      <div class="form-group">
+        <label class="form-label" for="vehicle-id-input">Placa o Número de Serie (VIN)</label>
+        <input type="text" id="vehicle-id-input" class="form-control" placeholder="Ej: ABC-123" value="SNA-2026">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="side-position-select">Costado Fotografiado</label>
+        <select id="side-position-select" class="form-control">
+          <option value="Lateral Derecho" selected>Lateral Derecho</option>
+          <option value="Lateral Izquierdo">Lateral Izquierdo</option>
+          <option value="Frontal (Paragolpes / Capó)">Frontal (Paragolpes / Capó)</option>
+          <option value="Trasero (Baúl / Compuerta)">Trasero (Baúl / Compuerta)</option>
+          <option value="Techo / Panorámico">Techo / Panorámico</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="inspection-notes">Notas del Inspector</label>
+        <input type="text" id="inspection-notes" class="form-control" placeholder="Ej: Entrega de alquiler en sede aeropuerto">
+      </div>
+
+      <button id="btn-run-analysis" type="button" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;" disabled>
+        ⚡ Analizar Daños con IA (MobileNet)
+      </button>
+    </div>
+
+    <!-- TARJETA DINÁMICA DE RESULTADOS DEL MODELO -->
+    <div id="results-card" class="glass-card" style="display: none; border-color: var(--accent-cyan); box-shadow: var(--shadow-glow);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.25rem;">Resultado de Inferencia</h3>
+        <span id="res-damage-badge" class="badge">---</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;">
+        <div>
+          <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">Vehículo:</span>
+          <strong id="res-vehicle-id">---</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">Costado:</span>
+          <strong id="res-side">---</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">Tipo de Defecto:</span>
+          <span id="res-type-badge" class="badge">---</span>
+        </div>
+        <div>
+          <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">Grado de Severidad:</span>
+          <span id="res-severity-badge" class="badge">---</span>
+        </div>
+        <div>
+          <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">Confianza del Modelo:</span>
+          <strong id="res-confidence" style="color: var(--accent-cyan);">---</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">Fecha y Hora:</span>
+          <span id="res-timestamp" style="font-size: 0.82rem;">---</span>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="font-size: 0.78rem; color: var(--text-muted); font-family: monospace;">
+          ID Inspección: <span id="res-inspection-id">---</span>
+        </div>
+        <a id="btn-go-report" href="{% url 'report' %}" class="btn btn-primary" style="width: 100%; text-align: center;">
+          📄 Generar Acta de Inspección Digital
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% load static %}
+<script src="{% static 'js/camera.js' %}"></script>
+{% endblock %}

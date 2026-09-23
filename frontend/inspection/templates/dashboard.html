@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AutoInspect AI{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: gap: 1rem;">
+  <div>
+    <h1 style="font-size: 2.1rem; margin-bottom: 0.35rem;">Panel de Control de Inspecciones</h1>
+    <p style="color: var(--text-secondary);">
+      Bienvenido, <strong>{{ user_name }}</strong> ({{ role }}). Estado operativo de la flota en tiempo real.
+    </p>
+  </div>
+  <a href="{% url 'inspect' %}" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+    📸 Iniciar Inspección con Cámara
+  </a>
+</div>
+
+<!-- STATS GRID -->
+<div class="stats-grid">
+  <div class="glass-card stat-card">
+    <div class="stat-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">
+      🚗
+    </div>
+    <div>
+      <div class="stat-val">128</div>
+      <div class="stat-lbl">Vehículos Inspeccionados</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--accent-rose);">
+      ⚡
+    </div>
+    <div>
+      <div class="stat-val">34</div>
+      <div class="stat-lbl">Daños Preexistentes Evitados</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">
+      🔍
+    </div>
+    <div>
+      <div class="stat-val">22</div>
+      <div class="stat-lbl">Rayones (Scratch) Detectados</div>
+    </div>
+  </div>
+
+  <div class="glass-card stat-card">
+    <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple);">
+      🛡️
+    </div>
+    <div>
+      <div class="stat-val">12</div>
+      <div class="stat-lbl">Abolladuras (Dent) Detectadas</div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCIONES RÁPIDAS Y GUÍA DE PROCESO -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="glass-card">
+    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">Flujo de Inspección y Prevención de Disputas</h3>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        <span style="background: rgba(6,182,212,0.2); color: var(--accent-cyan); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">1</span>
+        <div>
+          <h4 style="font-size: 1rem;">Captura en Vivo con Dispositivo Móvil o Cámara</h4>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">El inspector activa el stream vía <code>getUserMedia</code> con guía HUD de encuadre en el costado del vehículo.</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        <span style="background: rgba(139,92,246,0.2); color: var(--accent-purple); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">2</span>
+        <div>
+          <h4 style="font-size: 1rem;">Inferencia Instantánea con MobileNet (FastAPI)</h4>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">La red neuronal clasifica el tipo de defecto (Scratch / Dent), severidad (Low / Medium / High) y delimita las regiones en milisegundos.</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        <span style="background: rgba(16,185,129,0.2); color: var(--accent-emerald); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">3</span>
+        <div>
+          <h4 style="font-size: 1rem;">Emisión de Acta Digital Criptográfica</h4>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">Generación del resumen digital de inspección en <code>/api/v1/inspection-report</code> firmado digitalmente con hash SHA-256 para validez legal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <h3 style="font-size: 1.25rem; margin-bottom: 0.75rem;">Endpoints Swagger</h3>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Consulte la documentación interactiva en FastAPI Swagger UI:
+      </p>
+      <div style="font-family: monospace; font-size: 0.82rem; background: rgba(0,0,0,0.3); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 0.5rem;">
+        <div><span style="color: #4ade80; font-weight: 700;">POST</span> /api/v1/inspect-vehicle</div>
+        <div><span style="color: #60a5fa; font-weight: 700;">GET</span>  /api/v1/inspection-report</div>
+        <div><span style="color: #4ade80; font-weight: 700;">POST</span> /api/v1/auth/login</div>
+      </div>
+    </div>
+    <a href="http://localhost:8000/docs" target="_blank" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">
+      🚀 Abrir Swagger /docs
+    </a>
+  </div>
+</div>
+{% endblock %}
