@@ -53,6 +53,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import time
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    """Mide y optimiza el tiempo de respuesta del servidor (latencia en ms)"""
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time = (time.perf_counter() - start_time) * 1000
+    response.headers["X-Process-Time-Ms"] = f"{process_time:.2f}"
+    return response
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Manejo amigable de errores de validación de esquemas Pydantic"""
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "Error de validación en la solicitud",
+            "details": exc.errors(),
+            "status": "validation_failed"
+        }
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Manejo global de excepciones no controladas con formato uniforme"""
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Error interno al procesar la inspección",
+            "detail": str(exc),
+            "status": "server_error"
+        }
+    )
+
 from backend.auth.routes import router as auth_router
 from backend.routes.inspect import router as inspect_router
 from backend.routes.report import router as report_router
